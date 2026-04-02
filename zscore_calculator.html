@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sri Lanka A/L Z-Score Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&family=DM+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f4ef;
+    --surface: #ffffff;
+    --surface2: #f0ece4;
+    --border: #e0d9ce;
+    --text: #1a1714;
+    --text2: #6b6560;
+    --text3: #9e9890;
+    --accent: #2d6a4f;
+    --accent-light: #d8f3dc;
+    --accent2: #b5451b;
+    --accent2-light: #fde8df;
+    --purple: #4a3f8f;
+    --purple-light: #ede9fb;
+    --gold: #b5860d;
+    --gold-light: #fdf3d7;
+    --font-display: 'DM Serif Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  header {
+    background: var(--text);
+    color: #f7f4ef;
+    padding: 2.5rem 2rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    right: -40px;
+    top: -40px;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    border: 40px solid rgba(255,255,255,0.05);
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    right: 60px;
+    bottom: -60px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    border: 30px solid rgba(255,255,255,0.04);
+  }
+
+  .header-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(247,244,239,0.5);
+    margin-bottom: 0.5rem;
+    font-weight: 400;
+  }
+
+  header h1 {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+  }
+
+  header p {
+    font-size: 14px;
+    color: rgba(247,244,239,0.6);
+    max-width: 480px;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* ── Slider section ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .card-title {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 1.25rem;
+    font-weight: 500;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 1.75rem;
+  }
+
+  .stat {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.purple { color: var(--purple); }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 4px;
+  }
+
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 1.5rem;
+  }
+
+  .slider-label {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--font-mono);
+    white-space: nowrap;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--text);
+    cursor: pointer;
+    border: 3px solid var(--surface);
+    box-shadow: 0 0 0 1px var(--text);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--text);
+    cursor: pointer;
+    border: 3px solid var(--surface);
+    box-shadow: 0 0 0 1px var(--text);
+  }
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 200px;
+  }
+
+  .insight-box {
+    margin-top: 1.25rem;
+    padding: 0.85rem 1.1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--accent-light);
+    border-radius: 0 8px 8px 0;
+    font-size: 13.5px;
+    color: #1a3a28;
+    line-height: 1.6;
+  }
+
+  .tier-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 0.5rem;
+  }
+
+  /* ── Calculation explainer ── */
+  .section-heading {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 400;
+    margin: 2.5rem 0 1rem;
+    color: var(--text);
+  }
+
+  .formula-card {
+    background: var(--text);
+    color: #f7f4ef;
+    border-radius: 14px;
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .formula-card .card-title { color: rgba(247,244,239,0.4); }
+
+  .formula-main {
+    font-family: var(--font-mono);
+    font-size: clamp(14px, 3vw, 18px);
+    text-align: center;
+    padding: 1.25rem;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    margin: 1rem 0;
+    line-height: 1.9;
+    letter-spacing: 0.02em;
+  }
+
+  .formula-main span.hi { color: #78d9a8; }
+  .formula-main span.hi2 { color: #ffb86c; }
+  .formula-main span.hi3 { color: #ff9b8a; }
+  .formula-main span.eq { color: rgba(247,244,239,0.4); font-size: 0.85em; }
+
+  .legend-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    margin-top: 1rem;
+    font-size: 13px;
+    color: rgba(247,244,239,0.65);
+  }
+
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Example calculator ── */
+  .example-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+
+  .subject-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.1rem 0.9rem;
+  }
+
+  .subject-name {
+    font-size: 12px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+
+  .input-row {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 10px;
+  }
+
+  .input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .input-group label {
+    font-size: 12px;
+    color: var(--text2);
+    width: 80px;
+    flex-shrink: 0;
+  }
+
+  .input-group input {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    background: var(--surface2);
+    color: var(--text);
+    outline: none;
+    width: 100%;
+  }
+
+  .input-group input:focus { border-color: var(--accent); }
+
+  .subject-zscore {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text2);
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+  }
+
+  .subject-zscore span {
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 14px;
+  }
+
+  .calc-result {
+    background: var(--gold-light);
+    border: 1px solid #e8c96e;
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .calc-formula-text {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--gold);
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .calc-final {
+    text-align: right;
+  }
+
+  .calc-final .big {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    color: #7a5700;
+    line-height: 1;
+  }
+
+  .calc-final .label {
+    font-size: 11px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Steps ── */
+  .steps {
+    counter-reset: step;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .step {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    align-items: flex-start;
+  }
+
+  .step-num {
+    counter-increment: step;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--text);
+    color: #f7f4ef;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .step-body h4 {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .step-body p {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+
+  .step-body code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--surface2);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text3);
+    padding: 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 540px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .stats-grid .stat:last-child { grid-column: span 2; }
+    .stat-value { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-eyebrow">Sri Lanka GCE Advanced Level</div>
+  <h1>Z-Score Explorer</h1>
+  <p>Understand where a student stands among all A/L candidates, and how the Z-score is calculated.</p>
+</header>
+
+<div class="container">
+
+  <!-- ── Slider + Chart ── -->
+  <div class="card">
+    <div class="card-title">Move the slider to explore</div>
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="stat-label">Z-score</div>
+        <div class="stat-value" id="zscore-display">1.50</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Top percentile</div>
+        <div class="stat-value accent" id="percentile-display">6.7%</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Tier</div>
+        <div class="stat-value purple" id="tier-display" style="font-size:1.1rem; padding-top:6px;">Above average</div>
+        <div class="stat-sub" id="tier-sub">Competitive for most courses</div>
+      </div>
+    </div>
+
+    <div class="slider-row">
+      <span class="slider-label">−3.0</span>
+      <input type="range" id="zscore-slider" min="-3" max="3" step="0.01" value="1.5">
+      <span class="slider-label">+3.0</span>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="bellChart"></canvas>
+    </div>
+
+    <div class="insight-box" id="insight-text"></div>
+  </div>
+
+  <!-- ── Interactive example ── -->
+  <h2 class="section-heading">Try your own marks</h2>
+  <p style="font-size:14px; color:var(--text2); margin-bottom:1.25rem;">Enter your raw marks and the subject averages/standard deviations (published by the UGC each year) to compute your Z-score.</p>
+
+  <div class="example-grid">
+    <div class="subject-card">
+      <div class="subject-name">Subject 1</div>
+      <div class="input-row">
+        <div class="input-group">
+          <label>Your mark (x)</label>
+          <input type="number" class="raw" id="s1x" min="0" max="100" value="72" placeholder="0–100">
+        </div>
+        <div class="input-group">
+          <label>Mean (μ)</label>
+          <input type="number" class="mean" id="s1m" min="0" max="100" value="45" placeholder="e.g. 45">
+        </div>
+        <div class="input-group">
+          <label>Std dev (σ)</label>
+          <input type="number" class="sd" id="s1s" min="0.1" max="50" value="15" placeholder="e.g. 15">
+        </div>
+      </div>
+      <div class="subject-zscore">Z₁ = <span id="z1-val">—</span></div>
+    </div>
+
+    <div class="subject-card">
+      <div class="subject-name">Subject 2</div>
+      <div class="input-row">
+        <div class="input-group">
+          <label>Your mark (x)</label>
+          <input type="number" class="raw" id="s2x" min="0" max="100" value="65" placeholder="0–100">
+        </div>
+        <div class="input-group">
+          <label>Mean (μ)</label>
+          <input type="number" class="raw" id="s2m" min="0" max="100" value="40" placeholder="e.g. 40">
+        </div>
+        <div class="input-group">
+          <label>Std dev (σ)</label>
+          <input type="number" class="sd" id="s2s" min="0.1" max="50" value="16" placeholder="e.g. 16">
+        </div>
+      </div>
+      <div class="subject-zscore">Z₂ = <span id="z2-val">—</span></div>
+    </div>
+
+    <div class="subject-card">
+      <div class="subject-name">Subject 3</div>
+      <div class="input-row">
+        <div class="input-group">
+          <label>Your mark (x)</label>
+          <input type="number" class="raw" id="s3x" min="0" max="100" value="80" placeholder="0–100">
+        </div>
+        <div class="input-group">
+          <label>Mean (μ)</label>
+          <input type="number" class="raw" id="s3m" min="0" max="100" value="50" placeholder="e.g. 50">
+        </div>
+        <div class="input-group">
+          <label>Std dev (σ)</label>
+          <input type="number" class="sd" id="s3s" min="0.1" max="50" value="20" placeholder="e.g. 20">
+        </div>
+      </div>
+      <div class="subject-zscore">Z₃ = <span id="z3-val">—</span></div>
+    </div>
+  </div>
+
+  <div class="calc-result">
+    <div class="calc-formula-text" id="calc-formula-text">Final Z = (Z₁ + Z₂ + Z₃) ÷ 3</div>
+    <div class="calc-final">
+      <div class="label">Final Z-score</div>
+      <div class="big" id="calc-final-z">—</div>
+    </div>
+  </div>
+
+  <!-- ── Formula ── -->
+  <h2 class="section-heading">How the Z-score is calculated</h2>
+
+  <div class="formula-card">
+    <div class="card-title">The formula</div>
+    <div class="formula-main">
+      Z = (<span class="hi">x</span> − <span class="hi2">μ</span>) ÷ <span class="hi3">σ</span>
+      <br>
+      <span class="eq">Final Z-score = (Z₁ + Z₂ + Z₃) ÷ 3</span>
+    </div>
+    <div class="legend-row">
+      <div class="legend-item"><div class="dot" style="background:#78d9a8;"></div> <b>x</b> — your raw mark in a subject (0–100)</div>
+      <div class="legend-item"><div class="dot" style="background:#ffb86c;"></div> <b>μ</b> — island-wide mean (average) mark for that subject</div>
+      <div class="legend-item"><div class="dot" style="background:#ff9b8a;"></div> <b>σ</b> — standard deviation of all candidates' marks for that subject</div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Sit three A/L subjects</h4>
+        <p>Every candidate sits three subjects within their stream (e.g. Physics, Chemistry, Combined Maths for Physical Science). Each paper is marked out of 100.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>UGC computes the island-wide mean and standard deviation per subject</h4>
+        <p>After all scripts are marked, the Department of Examinations calculates the <code>mean (μ)</code> and <code>standard deviation (σ)</code> for every subject separately. This accounts for difficulty differences between papers.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Calculate Z for each subject</h4>
+        <p>Subtract the subject mean from your raw mark, then divide by the standard deviation: <code>Z = (x − μ) ÷ σ</code>. A positive Z means you scored above average; negative means below. The result is typically between −3 and +3.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Average the three subject Z-scores</h4>
+        <p>The final Z-score is the simple average: <code>(Z₁ + Z₂ + Z₃) ÷ 3</code>. This single number is what the UGC uses to rank all candidates island-wide.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>District quota is applied on top</h4>
+        <p>40% of university seats are filled by island-wide Z-score rank. The remaining 55% are allocated by district, proportional to population. An additional 5% goes to students from 13 educationally disadvantaged districts.</p>
+      </div>
+    </div>
+  </div>
+
+  
+
+</div>
+
+<footer>
+  Data based on UGC Sri Lanka admission guidelines. Z-score range is typically −3 to +3.
+</footer>
+
+<script>
+  /* ─── Bell curve helpers ─── */
+  function normalPDF(x) {
+    return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+  }
+  function normalCDF(z) {
+    const t = 1 / (1 + 0.2315419 * Math.abs(z));
+    const poly = t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+    const pdf = Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI);
+    const cdf = 1 - pdf * poly;
+    return z >= 0 ? cdf : 1 - cdf;
+  }
+  function getTier(z) {
+    if (z >= 2.8) return { label: 'Exceptional', sub: 'Top candidates island-wide — Medicine / Engineering', color: '#b5451b', bg: '#fde8df' };
+    if (z >= 2.3) return { label: 'Excellent', sub: 'Competitive for Medicine, Engineering, Law', color: '#7a5700', bg: '#fdf3d7' };
+    if (z >= 1.8) return { label: 'Very good', sub: 'Competitive for most popular courses', color: '#2d6a4f', bg: '#d8f3dc' };
+    if (z >= 1.0) return { label: 'Above average', sub: 'Competitive for most courses', color: '#4a3f8f', bg: '#ede9fb' };
+    if (z >= 0.0) return { label: 'Average', sub: 'May qualify via district quota', color: '#5f5e5a', bg: '#f0ece4' };
+    if (z >= -1.0) return { label: 'Below average', sub: 'University admission unlikely', color: '#5f5e5a', bg: '#f0ece4' };
+    return { label: 'Low', sub: 'University admission very unlikely', color: '#5f5e5a', bg: '#f0ece4' };
+  }
+
+  /* ─── Chart ─── */
+  const xs = Array.from({ length: 200 }, (_, i) => -3.5 + (i / 199) * 7);
+  const ys = xs.map(normalPDF);
+
+  let chart;
+  function buildDatasets(z) {
+    const fillXs = xs.filter(x => x <= z);
+    const fillYs = fillXs.map(normalPDF);
+    return [
+      {
+        label: 'Distribution',
+        data: xs.map((x, i) => ({ x, y: ys[i] })),
+        borderColor: '#1a1714',
+        backgroundColor: 'rgba(26,23,20,0.06)',
+        fill: true, pointRadius: 0, borderWidth: 2, tension: 0.4, order: 2
+      },
+      {
+        label: 'Below your score',
+        data: [...fillXs.map((x, i) => ({ x, y: fillYs[i] })), { x: fillXs[fillXs.length - 1], y: 0 }, { x: fillXs[0], y: 0 }],
+        borderColor: '#2d6a4f',
+        backgroundColor: 'rgba(45,106,79,0.2)',
+        fill: true, pointRadius: 0, borderWidth: 0, tension: 0.4, order: 1
+      },
+      {
+        label: 'Your Z-score',
+        data: [{ x: z, y: 0 }, { x: z, y: normalPDF(z) }],
+        borderColor: '#b5451b',
+        backgroundColor: '#b5451b',
+        fill: false, pointRadius: [7, 0], borderWidth: 2.5, tension: 0, order: 0
+      }
+    ];
+  }
+
+  function initChart(z) {
+    const ctx = document.getElementById('bellChart').getContext('2d');
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: { datasets: buildDatasets(z) },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false, parsing: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          x: {
+            type: 'linear', min: -3.5, max: 3.5,
+            ticks: { stepSize: 1, callback: v => v > 0 ? '+' + v : v, color: '#9e9890', font: { size: 12, family: 'DM Mono' } },
+            grid: { color: 'rgba(0,0,0,0.06)' },
+            title: { display: true, text: 'Z-score', color: '#9e9890', font: { size: 12, family: 'DM Mono' } }
+          },
+          y: { display: false, min: 0, max: 0.45 }
+        }
+      }
+    });
+  }
+
+  function updateSlider(z) {
+    const cdf = normalCDF(z);
+    const topPct = (1 - cdf) * 100;
+    const belowPct = (cdf * 100).toFixed(1);
+    const tier = getTier(z);
+
+    document.getElementById('zscore-display').textContent = z.toFixed(2);
+    document.getElementById('percentile-display').textContent = topPct < 0.1 ? '<0.1%' : topPct.toFixed(1) + '%';
+
+    const td = document.getElementById('tier-display');
+    td.textContent = tier.label;
+    td.style.color = tier.color;
+    document.getElementById('tier-sub').textContent = tier.sub;
+
+    document.getElementById('insight-text').textContent =
+      `A Z-score of ${z.toFixed(2)} means this student scored higher than ${belowPct}% of all A/L candidates. ` +
+      `Only ${topPct < 0.1 ? 'less than 0.1' : topPct.toFixed(1)}% of students scored higher. ` +
+      `The green shaded area on the curve represents all students who scored below this Z-score.`;
+
+    if (chart) {
+      chart.data.datasets = buildDatasets(z);
+      chart.update('none');
+    }
+  }
+
+  /* ─── Subject calculator ─── */
+  function calcSubjectZ(xId, mId, sId) {
+    const x = parseFloat(document.getElementById(xId).value);
+    const m = parseFloat(document.getElementById(mId).value);
+    const s = parseFloat(document.getElementById(sId).value);
+    if (isNaN(x) || isNaN(m) || isNaN(s) || s <= 0) return null;
+    return (x - m) / s;
+  }
+
+  function updateCalc() {
+    const z1 = calcSubjectZ('s1x', 's1m', 's1s');
+    const z2 = calcSubjectZ('s2x', 's2m', 's2s');
+    const z3 = calcSubjectZ('s3x', 's3m', 's3s');
+
+    document.getElementById('z1-val').textContent = z1 !== null ? z1.toFixed(4) : '—';
+    document.getElementById('z2-val').textContent = z2 !== null ? z2.toFixed(4) : '—';
+    document.getElementById('z3-val').textContent = z3 !== null ? z3.toFixed(4) : '—';
+
+    if (z1 !== null && z2 !== null && z3 !== null) {
+      const final = (z1 + z2 + z3) / 3;
+      document.getElementById('calc-formula-text').textContent =
+        `Final Z = (${z1.toFixed(3)} + ${z2.toFixed(3)} + ${z3.toFixed(3)}) ÷ 3`;
+      document.getElementById('calc-final-z').textContent = final.toFixed(4);
+
+      /* sync slider to computed Z */
+      const clamped = Math.max(-3, Math.min(3, final));
+      document.getElementById('zscore-slider').value = clamped;
+      updateSlider(clamped);
+    } else {
+      document.getElementById('calc-final-z').textContent = '—';
+      document.getElementById('calc-formula-text').textContent = 'Final Z = (Z₁ + Z₂ + Z₃) ÷ 3';
+    }
+  }
+
+  /* ─── Init ─── */
+  initChart(1.5);
+  updateSlider(1.5);
+  updateCalc();
+
+  document.getElementById('zscore-slider').addEventListener('input', e => updateSlider(parseFloat(e.target.value)));
+  document.querySelectorAll('.subject-card input').forEach(inp => inp.addEventListener('input', updateCalc));
+</script>
+</body>
+</html>
